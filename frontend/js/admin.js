@@ -11,7 +11,7 @@ window.load_admin_dashboard = async function() {
     const shortlisted = appsByStatus.shortlisted || 0;
     const rejected = appsByStatus.rejected || 0;
     const selected = appsByStatus.selected || 0;
-    const totalApps = applied + shortlisted + rejected + selected;
+    const totalApps = applied + shortlisted + rejected + selected ;
     
     page.innerHTML = `
       <div class="topbar"><div class="topbar-title">Admin Dashboard</div></div>
