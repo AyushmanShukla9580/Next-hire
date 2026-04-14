@@ -32,6 +32,9 @@ router.get('/:id', protect, async (req, res) => {
 
 router.post('/', protect, async (req, res) => {
   try {
+    if (!req.user.resume || !req.user.resume.data) {
+      return res.status(400).json({ message: 'Please upload your resume before applying' });
+    }
     const app = await Application.create({ job: req.body.jobId, candidate: req.user._id, coverLetter: req.body.coverLetter });
     res.status(201).json({ application: app });
   } catch (e) {

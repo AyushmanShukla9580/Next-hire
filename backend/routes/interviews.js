@@ -32,4 +32,12 @@ router.post('/', protect, async (req, res) => {
   } catch (e) { res.status(500).json({ message: e.message }); }
 });
 
+router.delete('/:id', protect, async (req, res) => {
+  try {
+    const interview = await Interview.findOneAndDelete({ _id: req.params.id, recruiter: req.user._id });
+    if (!interview) return res.status(404).json({ message: 'Interview not found' });
+    res.json({ message: 'Deleted' });
+  } catch (e) { res.status(500).json({ message: e.message }); }
+});
+
 module.exports = router;

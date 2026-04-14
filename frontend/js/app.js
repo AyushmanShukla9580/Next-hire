@@ -214,8 +214,11 @@ const API = 'http://localhost:5002/api';
 const BASE_URL = 'http://localhost:5002';
 
 // Converts stored path /uploads/file.pdf → full backend URL
-function fileUrl(p) {
+function fileUrl(p, userId = null) {
   if (!p) return null;
+  if (typeof p === 'object' && p.data) {
+    return userId ? `${API}/candidate/resume/${userId}` : `${API}/candidate/resume`;
+  }
   if (p.startsWith('http')) return p;
   return BASE_URL + p;
 }
@@ -251,6 +254,7 @@ async function http(method, path, body) {
 const get = (p) => http('GET', p);
 const post = (p, b) => http('POST', p, b);
 const put = (p, b) => http('PUT', p, b);
+const patch = (p, b) => http('PATCH', p, b);
 const del = (p) => http('DELETE', p);
 
 // ── TOAST ──
@@ -273,7 +277,6 @@ const loadedPages = new Set();
 
 function navigate(page, forceReload = false) {
   if (state.page === page && !forceReload) {
-    // Already on this page — just make sure it's visible, don't reload
     return;
   }
   state.page = page;
@@ -289,9 +292,9 @@ function navigate(page, forceReload = false) {
   if (nav) nav.classList.add('active');
 
   // Only call load function if page hasn't been loaded yet, or forceReload
-  if ((forceReload || !loadedPages.has(page)) && typeof window[`load_${page}`] === 'function') {
+  if ((forceReload || !loadedPages.has(page)) && typeof window[`load_${page.replace(/-/g, '_')}`] === 'function') {
     loadedPages.add(page);
-    window[`load_${page}`]();
+    window[`load_${page.replace(/-/g, '_')}`]();
   }
 }
 
@@ -324,7 +327,15 @@ function showApp() {
   loadedPages.clear();
   state.page = null; // force first navigation to load
   buildSidebar();
-  navigate('dashboard');
+  
+  // Navigate based on role
+  if (state.user.role === 'admin') {
+    navigate('admin-dashboard');
+  } else if (state.user.role === 'recruiter') {
+    navigate('dashboard');
+  } else {
+    navigate('dashboard');
+  }
 }
 
 function logout() {
@@ -337,8 +348,9 @@ function logout() {
 function buildSidebar() {
   const user = state.user;
   if (!user) return;
+  console.log('Building sidebar for role:', user.role);
   document.getElementById('sidebarUserName').textContent = user.name;
-  document.getElementById('sidebarUserRole').textContent = user.role;
+  document.getElementById('sidebarUserRole').textContent = user.role === 'admin' ? 'Admin' : user.role;
   document.getElementById('sidebarAvatar').textContent = user.name[0].toUpperCase();
 
   const recruiterNav = [
@@ -358,8 +370,16 @@ function buildSidebar() {
     { icon: '💬', label: 'Messages', page: 'messages' },
     { icon: '👤', label: 'My Profile', page: 'profile' },
   ];
+  const adminNav = [
+    { icon: '📊', label: 'Dashboard', page: 'admin-dashboard' },
+    { icon: '👥', label: 'All Users', page: 'admin-users' },
+    { icon: '📝', label: 'Recruiter Requests', page: 'admin-recruiter-requests' },
+    { icon: '💼', label: 'Recruiters', page: 'admin-recruiters' },
+    { icon: '👤', label: 'Candidates', page: 'admin-candidates' },
+    { icon: '📋', label: 'Jobs', page: 'admin-jobs' },
+  ];
 
-  const nav = user.role === 'recruiter' ? recruiterNav : candidateNav;
+  const nav = user.role === 'admin' ? adminNav : (user.role === 'recruiter' ? recruiterNav : candidateNav);
   const container = document.getElementById('sidebarNav');
   container.innerHTML = nav.map(item => `
     <a class="nav-item" data-page="${item.page}" onclick="navigate('${item.page}')">

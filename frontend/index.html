@@ -60,6 +60,9 @@
         <div class="form-group">
           <label class="form-label">Password</label>
           <input id="authPassword" class="form-input" type="password" placeholder="••••••••" required>
+          <div id="passwordHint" class="text-muted" style="font-size:11px;margin-top:4px;display:none">
+            Must be 8-16 chars, with uppercase, number & special char
+          </div>
         </div>
         <button type="submit" class="btn btn-primary btn-lg w-full" style="justify-content:center;margin-bottom:20px" id="authBtn">Sign In</button>
       </form>
@@ -105,6 +108,16 @@
     <div id="page-messages" class="page"></div>
     <div id="page-analytics" class="page"></div>
     <div id="page-profile" class="page"></div>
+    
+    <!-- Admin Pages -->
+    <div id="page-admin-dashboard" class="page"></div>
+    <div id="page-admin-users" class="page"></div>
+    <div id="page-admin-recruiter-requests" class="page"></div>
+    <div id="page-admin-recruiters" class="page"></div>
+    <div id="page-admin-candidates" class="page"></div>
+    <div id="page-admin-jobs" class="page"></div>
+    <div id="page-admin-pipeline" class="page"></div>
+    <div id="page-admin-logs" class="page"></div>
 
     <!-- Dynamic modals mounted here -->
     <div id="profileModal"></div>
@@ -120,7 +133,7 @@
   <div class="modal">
     <div class="modal-header">
       <div class="modal-title">Post a Job</div>
-      <button class="modal-close" onclick="closeModal('jobModal')">✕</button>
+      <button type="button" class="modal-close" onclick="this.closest('.modal-overlay').classList.remove('open')">✕</button>
     </div>
     <form id="jobForm" onsubmit="submitJob(event)">
       <input type="hidden" id="jobId">
@@ -141,7 +154,7 @@
       <div class="grid-2">
         <div class="form-group">
           <label class="form-label">Location *</label>
-          <input id="jobLocation" class="form-input" placeholder="Remote / New York" required>
+          <input id="jobLocation" class="form-input" placeholder="City/Office location (e.g. New York)">
         </div>
         <div class="form-group">
           <label class="form-label">Job Type</label>
@@ -173,13 +186,13 @@
   <div class="modal">
     <div class="modal-header">
       <div class="modal-title">Schedule Interview</div>
-      <button class="modal-close" onclick="closeModal('interviewModal')">✕</button>
+      <button type="button" class="modal-close" onclick="this.closest('.modal-overlay').classList.remove('open')">✕</button>
     </div>
     <form onsubmit="submitInterview(event)">
       <input type="hidden" id="iAppId">
       <div class="form-group">
-        <label class="form-label">Application ID</label>
-        <input id="iAppIdDisplay" class="form-input" placeholder="Application ID or candidate name">
+        <label class="form-label">Application ID *</label>
+        <input id="iAppIdDisplay" class="form-input" placeholder="Paste Application ID from Candidates page">
       </div>
       <div class="grid-2">
         <div class="form-group">
@@ -218,7 +231,7 @@
   <div class="modal">
     <div class="modal-header">
       <div class="modal-title">Edit Profile</div>
-      <button class="modal-close" onclick="closeModal('editProfileModal')">✕</button>
+      <button type="button" class="modal-close" onclick="this.closest('.modal-overlay').classList.remove('open')">✕</button>
     </div>
     <form onsubmit="submitProfile(event)">
       <div class="form-group">
@@ -266,7 +279,7 @@
   <div class="modal" style="max-width:400px">
     <div class="modal-header">
       <div class="modal-title">Upload Resume</div>
-      <button class="modal-close" onclick="closeModal('uploadResumeModal')">✕</button>
+      <button type="button" class="modal-close" onclick="this.closest('.modal-overlay').classList.remove('open')">✕</button>
     </div>
     <form onsubmit="uploadResume(event)">
       <div class="form-group">
@@ -285,5 +298,6 @@
 <script src="js/auth.js"></script>
 <script src="js/recruiter.js"></script>
 <script src="js/candidate.js"></script>
+<script src="js/admin.js"></script>
 </body>
 </html>

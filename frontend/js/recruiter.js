@@ -600,7 +600,8 @@
 
 // ── RECRUITER DASHBOARD ──
 async function load_dashboard() {
-  if (state.user?.role === 'recruiter') await loadRecruiterDashboard();
+  if (state.user?.role === 'admin') await load_admin_dashboard();
+  else if (state.user?.role === 'recruiter') await loadRecruiterDashboard();
   else await loadCandidateDashboard();
 }
 
@@ -639,7 +640,7 @@ async function loadRecruiterDashboard() {
   try {
     const [stats, apps] = await Promise.all([
       get('/recruiter/stats'),
-      get('/applications?limit=5'),
+      get('/recruiter/applications?limit=5'),
     ]);
     renderRecStats(stats);
     renderRecentApplicants(apps.applications || []);
@@ -760,7 +761,8 @@ function renderCharts(stats) {
 
 // ── JOBS PAGE ──
 async function load_jobs() {
-  if (state.user?.role === 'recruiter') await loadRecruiterJobs();
+  if (state.user?.role === 'admin') await load_admin_jobs();
+  else if (state.user?.role === 'recruiter') await loadRecruiterJobs();
   else await loadCandidateJobs();
 }
 
@@ -783,7 +785,7 @@ async function loadRecruiterJobs() {
 let allJobs = [];
 async function fetchAndRenderJobs() {
   try {
-    const data = await get('/jobs?mine=true');
+    const data = await get('/recruiter/jobs');
     allJobs = data.jobs || [];
     renderJobsTable(allJobs);
   } catch { renderJobsTable([]); }
@@ -843,6 +845,33 @@ async function deleteJob(id) {
   try { await del(`/jobs/${id}`); toast('Job deleted', 'success'); reloadPage('jobs'); } catch (e) { toast(e.message, 'error'); }
 }
 
+async function editJob(id) {
+  try {
+    const data = await get(`/jobs/${id}`);
+    const j = data.job;
+    document.getElementById('jobId').value = j._id;
+    document.getElementById('jobTitle').value = j.title || '';
+    document.getElementById('jobDesc').value = j.description || '';
+    document.getElementById('jobLocation').value = j.location || '';
+    document.getElementById('jobType').value = j.type || 'Full-time';
+    document.getElementById('jobSalary').value = j.salary || '';
+    document.getElementById('jobSkills').value = (j.skills || []).join(', ');
+    document.getElementById('jobDept').value = j.department || '';
+    openModal('jobModal');
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+async function toggleJobStatus(id) {
+  try {
+    const data = await get(`/jobs/${id}`);
+    const j = data.job;
+    const newStatus = j.status === 'active' ? 'closed' : 'active';
+    await put(`/jobs/${id}`, { status: newStatus });
+    toast(`Job ${newStatus === 'active' ? 'activated' : 'closed'}`, 'success');
+    reloadPage('jobs');
+  } catch (e) { toast(e.message, 'error'); }
+}
+
 async function submitJob(e) {
   e.preventDefault();
   const id = document.getElementById('jobId').value;
@@ -866,6 +895,11 @@ async function submitJob(e) {
 
 // ── CANDIDATES PAGE ──
 async function load_candidates() {
+  if (state.user?.role === 'admin') await load_admin_candidates();
+  else await loadRecruiterCandidates();
+}
+
+async function loadRecruiterCandidates() {
   const page = document.getElementById('page-candidates');
   page.innerHTML = `
     <div class="topbar">
@@ -892,7 +926,7 @@ async function load_candidates() {
 let allApplications = [];
 async function fetchCandidates(status = '') {
   try {
-    const data = await get(`/applications${status ? `?status=${status}` : ''}`);
+    const data = await get(`/recruiter/applications${status ? `?status=${status}` : ''}`);
     allApplications = data.applications || [];
     renderCandidatesGrid(allApplications);
   } catch { renderCandidatesGrid([]); }
@@ -930,7 +964,7 @@ function renderCandidatesGrid(apps) {
               <button class="btn btn-primary btn-sm" onclick="this.nextElementSibling.classList.toggle('open')">Actions ▾</button>
               <div class="dropdown-menu">
                 <div class="dropdown-item" onclick="updateStatus('${a._id}','shortlisted')">⭐ Shortlist</div>
-                <div class="dropdown-item" onclick="scheduleInterview('${a._id}')">📅 Schedule Interview</div>
+                <div class="dropdown-item" onclick="scheduleInterview('${a._id}', '${a.candidate?.name || ''}')">📅 Schedule Interview</div>
                 <div class="dropdown-item" onclick="updateStatus('${a._id}','selected')">✅ Select</div>
                 <div class="dropdown-item danger" onclick="updateStatus('${a._id}','rejected')">❌ Reject</div>
               </div>
@@ -944,15 +978,23 @@ function renderCandidatesGrid(apps) {
 
 async function updateStatus(appId, status) {
   try {
-    await put(`/applications/${appId}/status`, { status });
+    await patch(`/recruiter/applications/${appId}/status`, { status });
     toast(`Status updated to ${status}`, 'success');
     reloadPage('candidates');
   } catch (e) { toast(e.message, 'error'); }
 }
 
+async function viewCandidate(appId) {
+  await viewCandidateProfile(appId);
+}
+
 async function viewCandidateProfile(appId) {
   try {
-    const data = await get(`/applications/${appId}`);
+    const data = await get(`/recruiter/applications/${appId}`);
+    if (!data.application) {
+      toast('Application not found', 'error');
+      return;
+    }
     const c = data.application?.candidate || {};
     const a = data.application || {};
     document.getElementById('profileModal').innerHTML = `
@@ -960,7 +1002,7 @@ async function viewCandidateProfile(appId) {
         <div class="modal" style="max-width:680px" onclick="event.stopPropagation()">
           <div class="modal-header">
             <div class="modal-title">Candidate Profile</div>
-            <button class="modal-close" onclick="document.getElementById('profileModal').classList.remove('open')">✕</button>
+            <button type="button" class="modal-close" onclick="this.closest('.modal-overlay').classList.remove('open')">✕</button>
           </div>
           <div class="profile-header" style="margin-bottom:20px">
             <div class="avatar lg">${(c.name||'?')[0]}</div>
@@ -991,7 +1033,7 @@ async function viewCandidateProfile(appId) {
               <div style="font-weight:600;margin-bottom:16px">${a.job?.title||'—'}</div>
               <div class="form-label">Applied</div>
               <div class="text-muted" style="font-size:13px;margin-bottom:16px">${formatDate(a.createdAt)}</div>
-              ${c.resume ? `<a href="${fileUrl(c.resume)}" target="_blank" class="btn btn-primary btn-sm w-full" style="justify-content:center">📄 Download Resume</a>` : `<div class="text-muted">No resume uploaded</div>`}
+              ${c.resume?.data ? `<a href="${fileUrl(c.resume, c._id)}" target="_blank" class="btn btn-primary btn-sm w-full" style="justify-content:center">📄 Download Resume</a>` : `<div class="text-muted">No resume uploaded</div>`}
             </div>
           </div>
           <div class="divider"></div>
@@ -999,26 +1041,31 @@ async function viewCandidateProfile(appId) {
         </div>
       </div>
     `;
-  } catch (e) { toast(e.message, 'error'); }
+  } catch (e) { 
+    console.error('Error:', e);
+    toast('Error loading candidate: ' + e.message, 'error');
+  }
 }
 
 // ── INTERVIEWS ──
 async function load_interviews() {
   const page = document.getElementById('page-interviews');
+  const isRecruiter = state.user?.role === 'recruiter';
+  
   page.innerHTML = `
     <div class="topbar">
       <div class="topbar-title">Interviews</div>
-      <button class="btn btn-primary" onclick="openModal('interviewModal')">+ Schedule Interview</button>
+      ${isRecruiter ? '<button class="btn btn-primary" onclick="toast(\'Go to Candidates page and use Actions > Schedule Interview\', \'info\')">+ Schedule Interview</button>' : ''}
     </div>
     <div id="interviewsList"><div class="skeleton" style="height:300px;border-radius:16px"></div></div>
   `;
   try {
     const data = await get('/interviews');
-    renderInterviews(data.interviews || []);
-  } catch { renderInterviews([]); }
+    renderInterviews(data.interviews || [], isRecruiter);
+  } catch { renderInterviews([], isRecruiter); }
 }
 
-function renderInterviews(interviews) {
+function renderInterviews(interviews, isRecruiter = true) {
   const el = document.getElementById('interviewsList');
   if (!interviews.length) {
     el.innerHTML = `<div class="card" style="text-align:center;padding:60px"><div style="font-size:48px;margin-bottom:16px">📅</div><div class="text-muted">No interviews scheduled</div></div>`;
@@ -1031,12 +1078,13 @@ function renderInterviews(interviews) {
           <div class="timeline-dot">📅</div>
           <div class="timeline-content card">
             <div class="flex-center gap-12">
-              <div>
-                <div class="timeline-title">${i.candidate?.name||'Candidate'} — ${i.job?.title||'Role'}</div>
+              <div style="flex:1">
+                <div class="timeline-title">${isRecruiter ? (i.candidate?.name||'Candidate') + ' — ' + (i.job?.title||'Role') : i.job?.title || 'Interview'}</div>
                 <div class="timeline-time">${formatDate(i.scheduledAt)} at ${i.time||'TBD'} • ${i.type||'Video Call'}</div>
                 ${i.meetLink ? `<a href="${i.meetLink}" class="text-accent" style="font-size:12px" target="_blank">🔗 Join Meeting</a>` : ''}
               </div>
               ${statusBadge(i.status||'scheduled')}
+              ${isRecruiter ? '<button class="btn btn-danger btn-sm" style="margin-left:12px" onclick="deleteInterview(\'' + i._id + '\')">Delete</button>' : ''}
             </div>
           </div>
         </div>
@@ -1045,10 +1093,24 @@ function renderInterviews(interviews) {
   `;
 }
 
+async function deleteInterview(interviewId) {
+  if (!confirm('Delete this interview?')) return;
+  try {
+    await del('/interviews/' + interviewId);
+    toast('Interview deleted', 'success');
+    reloadPage('interviews');
+  } catch (e) { toast(e.message, 'error'); }
+}
+
 async function submitInterview(e) {
   e.preventDefault();
+  const appId = document.getElementById('iAppId').value;
+  if (!appId) {
+    toast('Please select an application from the Candidates page first', 'error');
+    return;
+  }
   const body = {
-    applicationId: document.getElementById('iAppId').value,
+    applicationId: appId,
     scheduledAt: document.getElementById('iDate').value,
     time: document.getElementById('iTime').value,
     type: document.getElementById('iType').value,
@@ -1185,7 +1247,8 @@ async function load_analytics() {
   } catch {}
 }
 
-function scheduleInterview(appId) {
+function scheduleInterview(appId, candidateName) {
   document.getElementById('iAppId').value = appId;
+  document.getElementById('iAppIdDisplay').value = appId + ' - ' + (candidateName || '');
   openModal('interviewModal');
 }

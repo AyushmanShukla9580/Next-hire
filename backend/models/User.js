@@ -6,7 +6,9 @@ const UserSchema = new mongoose.Schema({
   name: { type: String, required: true, trim: true },
   email: { type: String, required: true, unique: true, lowercase: true },
   password: { type: String, required: true, minlength: 6 },
-  role: { type: String, enum: ['candidate', 'recruiter'], default: 'candidate' },
+  role: { type: String, enum: ['admin', 'recruiter', 'candidate'], default: 'candidate' },
+  isApprovedRecruiter: { type: Boolean, default: false },
+  recruiterRequestStatus: { type: String, enum: ['none', 'pending', 'approved', 'rejected'], default: 'none' },
   company: String,
   // Candidate profile
   title: String,
@@ -14,20 +16,19 @@ const UserSchema = new mongoose.Schema({
   skills: [String],
   experience: String,
   education: String,
-  resume: String, // file path
+  // Resume stored in MongoDB
+  resume: {
+    data: Buffer,
+    contentType: String,
+    filename: String,
+  },
   linkedin: String,
   github: String,
   savedJobs: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Job' }],
 }, { timestamps: true });
 
-UserSchema.pre('save', async function(next) {
-  if (!this.isModified('password')) return next();
-  this.password = await bcrypt.hash(this.password, 10);
-  next();
-});
-
 UserSchema.methods.matchPassword = function(password) {
-  return bcrypt.compare(password, this.password);
+  return bcrypt.compareSync(password, this.password);
 };
 
 module.exports = mongoose.model('User', UserSchema);

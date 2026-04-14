@@ -474,10 +474,6 @@ async function loadCandidateJobs() {
         <option value="">All Types</option>
         <option>Full-time</option><option>Part-time</option><option>Remote</option><option>Contract</option>
       </select>
-      <select class="form-input" style="width:150px" onchange="candidateFilterJobs('location',this.value)">
-        <option value="">All Locations</option>
-        <option>Remote</option><option>New York</option><option>San Francisco</option><option>London</option>
-      </select>
     </div>
     <div id="jobsGrid" class="grid-3"><div class="skeleton" style="height:300px;border-radius:16px"></div></div>
   `;
@@ -535,7 +531,7 @@ async function viewJobDetail(jobId) {
         <div class="modal" style="max-width:640px" onclick="event.stopPropagation()">
           <div class="modal-header">
             <div class="modal-title">${j.title}</div>
-            <button class="modal-close" onclick="document.getElementById('jobDetailModal').classList.remove('open')">✕</button>
+            <button class="modal-close" onclick="this.closest('.modal-overlay').classList.remove('open')">✕</button>
           </div>
           <div class="flex-center gap-12 mb-16">
             <span class="badge badge-blue">${j.type||'Full-time'}</span>
@@ -558,6 +554,12 @@ async function viewJobDetail(jobId) {
 
 async function applyToJob(jobId) {
   try {
+    const profileRes = await get('/candidate/profile');
+    if (!profileRes.profile?.hasResume) {
+      toast('Please upload your resume before applying', 'error');
+      openModal('uploadResumeModal');
+      return;
+    }
     await post('/applications', { jobId });
     toast('Application submitted! 🎉', 'success');
     document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('open'));
@@ -566,8 +568,17 @@ async function applyToJob(jobId) {
 
 async function saveJob(jobId) {
   try {
-    await post(`/jobs/${jobId}/save`);
-    toast('Job saved! ❤️', 'success');
+    const res = await post(`/jobs/${jobId}/save`);
+    const savedList = document.getElementById('savedJobsList');
+    if (!res.saved) {
+      toast('Job removed from saved', 'success');
+      if (savedList) {
+        const data = await get('/candidate/saved');
+        renderPublicJobsSaved(data.jobs || []);
+      }
+    } else {
+      toast('Job saved! ❤️', 'success');
+    }
   } catch (e) { toast(e.message, 'error'); }
 }
 
@@ -693,8 +704,8 @@ async function load_profile() {
       <div style="margin-bottom:12px"><div style="font-weight:600;font-size:13px">Experience</div><div class="text-muted">${p.experience||'Not specified'}</div></div>
       <div><div style="font-weight:600;font-size:13px">Education</div><div class="text-muted">${p.education||'Not specified'}</div></div>
     `;
-    document.getElementById('profileResume').innerHTML = p.resume
-      ? `<a href="${fileUrl(p.resume)}" target="_blank" class="btn btn-primary btn-sm">📄 View Resume</a>`
+    document.getElementById('profileResume').innerHTML = p.hasResume
+      ? `<a href="http://localhost:5002/api/candidate/resume?token=${state.token}" target="_blank" class="btn btn-primary btn-sm">📄 View Resume</a>`
       : `<button class="btn btn-glass btn-sm" onclick="openModal('uploadResumeModal')">📤 Upload Resume</button>`;
     document.getElementById('profileStats').innerHTML = `
       <div class="profile-stat"><div class="profile-stat-value">${data.stats?.applied||0}</div><div class="profile-stat-label">Applied</div></div>
