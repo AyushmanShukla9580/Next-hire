@@ -1,7 +1,6 @@
 // ── ADMIN ROUTES ──
 const express = require('express');
 const User = require('../models/User');
-const Blocklist = require('../models/Blocklist');
 const { Job, Application, Interview, Message } = require('../models/index');
 const { protect, adminOnly } = require('../middleware/auth');
 
