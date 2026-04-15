@@ -12,14 +12,15 @@ router.use(protect, adminOnly);
 // GET /admin/stats - Dashboard statistics
 router.get('/stats', async (req, res) => {
   try {
-    const [totalUsers, totalJobs, totalApplications, totalInterviews, recruiters, candidates, pendingRecruiters] = await Promise.all([
+    const [totalUsers, totalJobs, totalApplications, totalInterviews, recruiters, candidates, pendingRecruiters, rejectedRecruiters] = await Promise.all([
       User.countDocuments(),
       Job.countDocuments(),
       Application.countDocuments(),
       Interview.countDocuments(),
-      User.countDocuments({ role: 'recruiter' }),
+      User.countDocuments({ role: 'recruiter', recruiterRequestStatus: { $ne: 'rejected' } }),
       User.countDocuments({ role: 'candidate' }),
       User.countDocuments({ role: 'recruiter', recruiterRequestStatus: 'pending' }),
+      User.countDocuments({ role: 'recruiter', recruiterRequestStatus: 'rejected' }),
     ]);
     
     const jobsByStatus = await Job.aggregate([
@@ -38,6 +39,7 @@ router.get('/stats', async (req, res) => {
       recruiters,
       candidates,
       pendingRecruiters,
+      rejectedRecruiters,
       jobsByStatus: jobsByStatus.reduce((acc, j) => { acc[j._id] = j.count; return acc; }, {}),
       appsByStatus: appsByStatus.reduce((acc, a) => { acc[a._id] = a.count; return acc; }, {}),
     });
