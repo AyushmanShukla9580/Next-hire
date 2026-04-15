@@ -3,6 +3,8 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 require('dotenv').config();
 
+const seedAdmin = require('./seed');
+
 const app = express();
 
 // Allow requests from any local frontend (live-server, file://, etc.)
@@ -20,7 +22,10 @@ app.use('/api/candidate', require('./routes/candidate'));
 app.use('/api/admin', require('./routes/admin'));
 
 mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/nexthire')
-  .then(() => console.log('✅ MongoDB connected'))
+  .then(async () => {
+    console.log('✅ MongoDB connected');
+    await seedAdmin();
+  })
   .catch(err => console.error('❌ MongoDB error:', err));
 
 const PORT = process.env.PORT || 5002;
