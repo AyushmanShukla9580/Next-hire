@@ -21,7 +21,7 @@ app.use('/api/recruiter', require('./routes/recruiter'));
 app.use('/api/candidate', require('./routes/candidate'));
 app.use('/api/admin', require('./routes/admin'));
 
-mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/nexthire')
+mongoose.connect(process.env.MONGO_URI)
   .then(async () => {
     console.log('✅ MongoDB connected');
     await seedAdmin();
