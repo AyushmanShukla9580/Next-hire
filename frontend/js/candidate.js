@@ -705,7 +705,7 @@ async function load_profile() {
       <div><div style="font-weight:600;font-size:13px">Education</div><div class="text-muted">${p.education||'Not specified'}</div></div>
     `;
     document.getElementById('profileResume').innerHTML = p.hasResume
-      ? `<a href="http://localhost:5002/api/candidate/resume?token=${state.token}" target="_blank" class="btn btn-primary btn-sm">📄 View Resume</a>`
+      ? `<a href="https://next-hire-krat.onrender.com/api/candidate/resume?token=${state.token}" target="_blank" class="btn btn-primary btn-sm">📄 View Resume</a>`
       : `<button class="btn btn-glass btn-sm" onclick="openModal('uploadResumeModal')">📤 Upload Resume</button>`;
     document.getElementById('profileStats').innerHTML = `
       <div class="profile-stat"><div class="profile-stat-value">${data.stats?.applied||0}</div><div class="profile-stat-label">Applied</div></div>

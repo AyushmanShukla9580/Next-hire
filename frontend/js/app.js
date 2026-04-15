@@ -210,8 +210,8 @@
 
 
 // ── CONFIG ──
-const API = 'http://localhost:5002/api';
-const BASE_URL = 'http://localhost:5002';
+const API = 'https://next-hire-krat.onrender.com/api';
+const BASE_URL = 'https://next-hire-krat.onrender.com';
 
 // Converts stored path /uploads/file.pdf → full backend URL
 function fileUrl(p, userId = null) {
