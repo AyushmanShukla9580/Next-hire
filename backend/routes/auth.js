@@ -52,8 +52,11 @@ router.post('/login', async (req, res) => {
     const user = await User.findOne({ email });
     if (!user || !bcrypt.compareSync(password, user.password)) return res.status(401).json({ message: 'Invalid credentials' });
     
+    console.log('Login attempt - Role:', user.role, 'Status:', user.recruiterRequestStatus, 'Approved:', user.isApprovedRecruiter);
+    
     // Block recruiters who are pending approval
-    if (user.role === 'recruiter' && user.recruiterRequestStatus === 'pending') {
+    if (user.role === 'recruiter' && user.recruiterRequestStatus === 'pending' && !user.isApprovedRecruiter) {
+      console.log('Blocking pending recruiter login');
       return res.status(403).json({ message: 'Your account is pending approval. Please wait for admin to approve.' });
     }
     

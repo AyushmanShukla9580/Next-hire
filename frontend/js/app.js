@@ -316,13 +316,21 @@ function reloadPage(page) {
 }
 
 // ── AUTH ──
-function initApp() {
+async function initApp() {
   const token = store.get('token');
   const user = store.get('user');
   if (token && user) {
-    state.token = token;
-    state.user = user;
-    showApp();
+    try {
+      const data = await get('/auth/me');
+      state.token = token;
+      state.user = data.user;
+      store.set('user', data.user);
+      showApp();
+    } catch (e) {
+      store.del('token');
+      store.del('user');
+      showAuth();
+    }
   } else {
     showAuth();
   }
