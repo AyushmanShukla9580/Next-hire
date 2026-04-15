@@ -1,6 +1,7 @@
 // ── ADMIN ROUTES ──
 const express = require('express');
 const User = require('../models/User');
+const Blocklist = require('../models/Blocklist');
 const { Job, Application, Interview, Message } = require('../models/index');
 const { protect, adminOnly } = require('../middleware/auth');
 
@@ -12,15 +13,14 @@ router.use(protect, adminOnly);
 // GET /admin/stats - Dashboard statistics
 router.get('/stats', async (req, res) => {
   try {
-    const [totalUsers, totalJobs, totalApplications, totalInterviews, recruiters, candidates, pendingRecruiters, rejectedRecruiters] = await Promise.all([
+    const [totalUsers, totalJobs, totalApplications, totalInterviews, recruiters, candidates, pendingRecruiters] = await Promise.all([
       User.countDocuments(),
       Job.countDocuments(),
       Application.countDocuments(),
       Interview.countDocuments(),
-      User.countDocuments({ role: 'recruiter', recruiterRequestStatus: { $ne: 'rejected' } }),
+      User.countDocuments({ role: 'recruiter', isApprovedRecruiter: true }),
       User.countDocuments({ role: 'candidate' }),
       User.countDocuments({ role: 'recruiter', recruiterRequestStatus: 'pending' }),
-      User.countDocuments({ role: 'recruiter', recruiterRequestStatus: 'rejected' }),
     ]);
     
     const jobsByStatus = await Job.aggregate([
@@ -39,7 +39,6 @@ router.get('/stats', async (req, res) => {
       recruiters,
       candidates,
       pendingRecruiters,
-      rejectedRecruiters,
       jobsByStatus: jobsByStatus.reduce((acc, j) => { acc[j._id] = j.count; return acc; }, {}),
       appsByStatus: appsByStatus.reduce((acc, a) => { acc[a._id] = a.count; return acc; }, {}),
     });
@@ -85,16 +84,25 @@ router.patch('/users/:id/approve-recruiter', async (req, res) => {
   } catch (e) { res.status(500).json({ message: e.message }); }
 });
 
-// PATCH /admin/users/:id/reject-recruiter - Reject recruiter
+// PATCH /admin/users/:id/reject-recruiter - Reject and remove recruiter
 router.patch('/users/:id/reject-recruiter', async (req, res) => {
   try {
-    const user = await User.findByIdAndUpdate(
-      req.params.id,
-      { isApprovedRecruiter: false, recruiterRequestStatus: 'rejected', role: 'candidate' },
-      { new: true }
-    ).select('-password');
+    const user = await User.findById(req.params.id);
     if (!user) return res.status(404).json({ message: 'User not found' });
-    res.json({ user });
+    
+    const userEmail = user.email;
+    
+    // Add email to blocklist
+    await Blocklist.findOneAndUpdate(
+      { email: userEmail },
+      { email: userEmail, reason: 'Recruiter request rejected' },
+      { upsert: true }
+    );
+    
+    // Delete the user
+    await User.findByIdAndDelete(req.params.id);
+    
+    res.json({ message: 'User removed and email blocked' });
   } catch (e) { res.status(500).json({ message: e.message }); }
 });
 
