@@ -210,8 +210,8 @@
 
 
 // ── CONFIG ──
-const API = 'https://next-hire-krat.onrender.com/api';
-const BASE_URL = 'https://next-hire-krat.onrender.com';
+const API = 'https://next-hire-qftx.onrender.com/api';
+const BASE_URL = 'https://next-hire-qftx.onrender.com';
 
 // Converts stored path /uploads/file.pdf → full backend URL
 function fileUrl(p, userId = null) {
