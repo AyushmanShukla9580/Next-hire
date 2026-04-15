@@ -316,6 +316,8 @@ function reloadPage(page) {
 }
 
 // ── AUTH ──
+let userCheckInterval;
+
 async function initApp() {
   const token = store.get('token');
   const user = store.get('user');
@@ -326,6 +328,7 @@ async function initApp() {
       state.user = data.user;
       store.set('user', data.user);
       showApp();
+      startUserStatusCheck();
     } catch (e) {
       store.del('token');
       store.del('user');
@@ -334,6 +337,26 @@ async function initApp() {
   } else {
     showAuth();
   }
+}
+
+function startUserStatusCheck() {
+  if (userCheckInterval) clearInterval(userCheckInterval);
+  userCheckInterval = setInterval(async () => {
+    if (!state.token) return;
+    try {
+      const data = await get('/auth/me');
+      if (state.user._id !== data.user._id || state.user.role !== data.user.role) {
+        state.user = data.user;
+        store.set('user', data.user);
+        buildSidebar();
+      }
+    } catch (e) {
+      if (e.message.includes('pending') || e.message.includes('rejected')) {
+        toast('Your account approval was revoked. Please login again.', 'error');
+        logout();
+      }
+    }
+  }, 10000);
 }
 
 function showAuth() {
@@ -359,6 +382,7 @@ function showApp() {
 }
 
 function logout() {
+  if (userCheckInterval) clearInterval(userCheckInterval);
   store.del('token'); store.del('user');
   state.user = null; state.token = null;
   showAuth();

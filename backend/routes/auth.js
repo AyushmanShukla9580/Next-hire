@@ -1,20 +1,37 @@
 // ── AUTH ROUTES ──
 const express = require('express');
 const User = require('../models/User');
-const Blocklist = require('../models/Blocklist');
 const bcrypt = require('bcryptjs');
 const { genToken } = require('../middleware/auth');
 
 const router = express.Router();
 
+// GET /auth/me - Get current user (for session validation)
+router.get('/me', async (req, res) => {
+  try {
+    const auth = req.headers.authorization;
+    if (!auth?.startsWith('Bearer ')) {
+      return res.status(401).json({ message: 'Not authorized' });
+    }
+    const { id } = require('jsonwebtoken').verify(auth.split(' ')[1], process.env.JWT_SECRET || 'nexthire_super_secret');
+    const user = await User.findById(id).select('-password');
+    if (!user) return res.status(401).json({ message: 'User not found' });
+    
+    // Check if recruiter approval is pending/rejected
+    if (user.role === 'recruiter' && !user.isApprovedRecruiter) {
+      return res.status(403).json({ message: 'Your account is pending approval or has been rejected.' });
+    }
+    
+    res.json({ user });
+  } catch (e) {
+    res.status(401).json({ message: 'Invalid token' });
+  }
+});
+
 router.post('/register', async (req, res) => {
   try {
     const { name, email, password, company, role } = req.body;
     if (!name || !email || !password) return res.status(400).json({ message: 'All fields required' });
-    
-    // Check if email is blocked
-    const blocked = await Blocklist.findOne({ email: email.toLowerCase() });
-    if (blocked) return res.status(400).json({ message: 'This email is not allowed. Contact admin for more info.' });
     
     const exists = await User.findOne({ email });
     if (exists) return res.status(400).json({ message: 'Email already registered' });
@@ -52,12 +69,14 @@ router.post('/login', async (req, res) => {
     const user = await User.findOne({ email });
     if (!user || !bcrypt.compareSync(password, user.password)) return res.status(401).json({ message: 'Invalid credentials' });
     
-    console.log('Login attempt - Role:', user.role, 'Status:', user.recruiterRequestStatus, 'Approved:', user.isApprovedRecruiter);
-    
-    // Block recruiters who are pending approval
+    // Check if recruiter approval is pending
     if (user.role === 'recruiter' && user.recruiterRequestStatus === 'pending' && !user.isApprovedRecruiter) {
-      console.log('Blocking pending recruiter login');
       return res.status(403).json({ message: 'Your account is pending approval. Please wait for admin to approve.' });
+    }
+    
+    // Check if recruiter was rejected
+    if (user.role === 'recruiter' && user.recruiterRequestStatus === 'rejected') {
+      return res.status(403).json({ message: 'Your recruiter account has been rejected. Contact admin for more info.' });
     }
     
     res.json({ token: genToken(user._id), user: { _id: user._id, name: user.name, email: user.email, role: user.role, company: user.company, isApprovedRecruiter: user.isApprovedRecruiter, recruiterRequestStatus: user.recruiterRequestStatus } });

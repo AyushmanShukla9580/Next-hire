@@ -48,12 +48,9 @@ router.get('/stats', async (req, res) => {
 // GET /admin/users - All users
 router.get('/users', async (req, res) => {
   try {
-    console.log('GET /admin/users called');
     const users = await User.find().select('-password').sort('-createdAt');
-    console.log('Found users:', users.length);
     res.json({ users });
   } catch (e) { 
-    console.error('Error fetching users:', e);
     res.status(500).json({ message: e.message }); 
   }
 });
@@ -87,22 +84,13 @@ router.patch('/users/:id/approve-recruiter', async (req, res) => {
 // PATCH /admin/users/:id/reject-recruiter - Reject and remove recruiter
 router.patch('/users/:id/reject-recruiter', async (req, res) => {
   try {
-    const user = await User.findById(req.params.id);
+    const user = await User.findByIdAndUpdate(
+      req.params.id,
+      { isApprovedRecruiter: false, recruiterRequestStatus: 'rejected' },
+      { new: true }
+    ).select('-password');
     if (!user) return res.status(404).json({ message: 'User not found' });
-    
-    const userEmail = user.email;
-    
-    // Add email to blocklist
-    await Blocklist.findOneAndUpdate(
-      { email: userEmail },
-      { email: userEmail, reason: 'Recruiter request rejected' },
-      { upsert: true }
-    );
-    
-    // Delete the user
-    await User.findByIdAndDelete(req.params.id);
-    
-    res.json({ message: 'User removed and email blocked' });
+    res.json({ user });
   } catch (e) { res.status(500).json({ message: e.message }); }
 });
 

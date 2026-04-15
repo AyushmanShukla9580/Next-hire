@@ -25,7 +25,6 @@ router.get('/profile', protect, async (req, res) => {
     const hasResume = !!(profile.resume && profile.resume.data);
     delete profile.resume;
     profile.hasResume = hasResume;
-    console.log('Profile response - hasResume:', hasResume);
     res.json({ profile, stats: { applied, shortlisted, interviews } });
   } catch (e) { 
     console.error('Profile error:', e);

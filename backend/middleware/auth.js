@@ -7,19 +7,15 @@ const genToken = (id) => jwt.sign({ id }, JWT_SECRET, { expiresIn: '30d' });
 
 const protect = async (req, res, next) => {
   const auth = req.headers.authorization;
-  console.log('Auth header:', auth ? 'present' : 'missing');
   if (!auth?.startsWith('Bearer ')) {
-    console.log('No Bearer token');
     return res.status(401).json({ message: 'Not authorized' });
   }
   try {
     const { id } = jwt.verify(auth.split(' ')[1], JWT_SECRET);
     req.user = await User.findById(id).select('-password');
     if (!req.user) return res.status(401).json({ message: 'User not found' });
-    console.log('User authenticated:', req.user.role, req.user.name);
     next();
   } catch (e) {
-    console.log('Token verification failed:', e.message);
     res.status(401).json({ message: 'Invalid token' });
   }
 };
