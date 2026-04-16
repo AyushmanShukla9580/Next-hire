@@ -62,10 +62,20 @@ router.get('/applications', protect, recruiterOnly, async (req, res) => {
     if (req.query.status) filter.status = req.query.status;
     const applications = await Application.find(filter)
       .populate('job', 'title location company type postedBy')
-      .populate('candidate', 'name email title skills resume')
+      .populate('candidate', 'name email title skills')
       .sort('-createdAt')
       .limit(Number(req.query.limit) || 50);
-    res.json({ applications });
+    
+    // Add hasResume flag for each candidate
+    const User = require('../models/User');
+    const appsWithResume = await Promise.all(applications.map(async (app) => {
+      const appObj = app.toObject();
+      const candidate = await User.findById(app.candidate._id).select('resume');
+      appObj.candidate.hasResume = !!(candidate.resume && candidate.resume.data);
+      return appObj;
+    }));
+    
+    res.json({ applications: appsWithResume });
   } catch (e) { res.status(500).json({ message: e.message }); }
 });
 

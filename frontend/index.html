@@ -193,9 +193,10 @@
     </div>
     <form onsubmit="submitInterview(event)">
       <input type="hidden" id="iAppId">
+      <input type="hidden" id="iCandidateId">
       <div class="form-group">
-        <label class="form-label">Application ID *</label>
-        <input id="iAppIdDisplay" class="form-input" placeholder="Paste Application ID from Candidates page">
+        <label class="form-label">Candidate</label>
+        <input id="iCandidateName" class="form-input" placeholder="Candidate name" readonly>
       </div>
       <div class="grid-2">
         <div class="form-group">

@@ -964,7 +964,7 @@ function renderCandidatesGrid(apps) {
               <button class="btn btn-primary btn-sm" onclick="this.nextElementSibling.classList.toggle('open')">Actions ▾</button>
               <div class="dropdown-menu">
                 <div class="dropdown-item" onclick="updateStatus('${a._id}','shortlisted')">⭐ Shortlist</div>
-                <div class="dropdown-item" onclick="scheduleInterview('${a._id}', '${a.candidate?.name || ''}')">📅 Schedule Interview</div>
+                <div class="dropdown-item" onclick="scheduleInterview('${a._id}', '${a.candidate?.name || ''}', '${a.candidate?._id || ''}')">📅 Schedule Interview</div>
                 <div class="dropdown-item" onclick="updateStatus('${a._id}','selected')">✅ Select</div>
                 <div class="dropdown-item danger" onclick="updateStatus('${a._id}','rejected')">❌ Reject</div>
               </div>
@@ -1122,7 +1122,8 @@ async function submitInterview(e) {
     toast('Interview scheduled!', 'success');
     closeModal('interviewModal');
     document.getElementById('iAppId').value = '';
-    document.getElementById('iAppIdDisplay').value = '';
+    document.getElementById('iCandidateId').value = '';
+    document.getElementById('iCandidateName').value = '';
     document.getElementById('iDate').value = '';
     document.getElementById('iTime').value = '';
     document.getElementById('iLink').value = '';
@@ -1253,8 +1254,9 @@ async function load_analytics() {
   } catch {}
 }
 
-function scheduleInterview(appId, candidateName) {
+function scheduleInterview(appId, candidateName, candidateId) {
   document.getElementById('iAppId').value = appId;
-  document.getElementById('iAppIdDisplay').value = appId + ' - ' + (candidateName || '');
+  document.getElementById('iCandidateId').value = candidateId || '';
+  document.getElementById('iCandidateName').value = candidateName || '';
   openModal('interviewModal');
 }
