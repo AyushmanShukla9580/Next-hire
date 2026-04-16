@@ -178,13 +178,13 @@ db.users.updateOne({ email: "admin@example.com" }, { $set: { role: "admin" } })
 
 ## 👥 Team
 
-| Branch | Contributor |
-|--------|-------------|
-| `gitesh` | Gitesh |
-| `ayushman` | Ayushman |
-| `devendra` | Devendra |
-| `ekta` | Ekta |
-| `erica` | Erica |
+| Contributor |
+|--------|
+|  Gitesh |
+| Ayushman |
+| Devendra |
+| Ekta |
+| Erica |
 
 ---
 
