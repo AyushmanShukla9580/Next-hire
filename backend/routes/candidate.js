@@ -35,8 +35,8 @@ router.get('/profile', protect, async (req, res) => {
 // Update profile
 router.put('/profile', protect, async (req, res) => {
   try {
-    const { title, bio, skills, experience, education, linkedin, github } = req.body;
-    const user = await User.findByIdAndUpdate(req.user._id, { title, bio, skills, experience, education, linkedin, github }, { new: true }).select('-password');
+    const { name, title, bio, skills, experience, education, linkedin, github } = req.body;
+    const user = await User.findByIdAndUpdate(req.user._id, { name, title, bio, skills, experience, education, linkedin, github }, { new: true }).select('-password');
     res.json({ profile: user });
   } catch (e) { res.status(500).json({ message: e.message }); }
 });

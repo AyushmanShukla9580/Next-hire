@@ -666,6 +666,18 @@ function renderPublicJobsSaved(jobs) {
 // ── CANDIDATE: PROFILE ──
 async function load_profile() {
   const page = document.getElementById('page-profile');
+  const data = await get('/candidate/profile').catch(() => ({}));
+  const p = data.profile || {};
+  if (document.getElementById('editProfileModal')) {
+    document.getElementById('pName').value = state.user.name || '';
+    document.getElementById('pTitle').value = p.title || '';
+    document.getElementById('pBio').value = p.bio || '';
+    document.getElementById('pSkills').value = (p.skills || []).join(', ');
+    document.getElementById('pExp').value = p.experience || '';
+    document.getElementById('pEdu').value = p.education || '';
+    document.getElementById('pLinkedin').value = p.linkedin || '';
+    document.getElementById('pGithub').value = p.github || '';
+  }
   page.innerHTML = `
     <div class="topbar"><div class="topbar-title">My Profile</div><button class="btn btn-primary" onclick="openModal('editProfileModal')">✏️ Edit Profile</button></div>
     <div class="profile-header">
@@ -718,6 +730,7 @@ async function load_profile() {
 async function submitProfile(e) {
   e.preventDefault();
   const body = {
+    name: document.getElementById('pName').value,
     title: document.getElementById('pTitle').value,
     bio: document.getElementById('pBio').value,
     skills: document.getElementById('pSkills').value.split(',').map(s=>s.trim()),
@@ -728,6 +741,10 @@ async function submitProfile(e) {
   };
   try {
     await put('/candidate/profile', body);
+    if (body.name) {
+      state.user.name = body.name;
+      store.set('user', state.user);
+    }
     toast('Profile updated!', 'success');
     closeModal('editProfileModal');
     reloadPage('profile');
