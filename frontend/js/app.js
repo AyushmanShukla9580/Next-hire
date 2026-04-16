@@ -478,4 +478,19 @@ document.addEventListener('click', (e) => {
   }
 });
 
+// Force focus on input click
+document.addEventListener('mousedown', (e) => {
+  if (e.target.classList.contains('form-input') || e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') {
+    e.preventDefault();
+    e.target.focus();
+  }
+});
+
+// Ensure inputs are always focusable
+document.addEventListener('focusin', (e) => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') {
+    e.target.style.pointerEvents = 'auto';
+  }
+});
+
 window.addEventListener('DOMContentLoaded', initApp);
