@@ -1033,7 +1033,7 @@ async function viewCandidateProfile(appId) {
               <div style="font-weight:600;margin-bottom:16px">${a.job?.title||'—'}</div>
               <div class="form-label">Applied</div>
               <div class="text-muted" style="font-size:13px;margin-bottom:16px">${formatDate(a.createdAt)}</div>
-              ${c.resume?.data ? `<a href="${fileUrl(c.resume, c._id)}" target="_blank" class="btn btn-primary btn-sm w-full" style="justify-content:center">📄 Download Resume</a>` : `<div class="text-muted">No resume uploaded</div>`}
+              ${c.hasResume ? `<a href="${API}/candidate/resume/${c._id}" target="_blank" class="btn btn-primary btn-sm w-full" style="justify-content:center">📄 Download Resume</a>` : `<div class="text-muted">No resume uploaded</div>`}
             </div>
           </div>
           <div class="divider"></div>
@@ -1055,7 +1055,7 @@ async function load_interviews() {
   page.innerHTML = `
     <div class="topbar">
       <div class="topbar-title">Interviews</div>
-      ${isRecruiter ? '<button class="btn btn-primary" onclick="toast(\'Go to Candidates page and use Actions > Schedule Interview\', \'info\')">+ Schedule Interview</button>' : ''}
+      ${isRecruiter ? '<button class="btn btn-primary" onclick="openModal(\'interviewModal\')">+ Schedule Interview</button>' : ''}
     </div>
     <div id="interviewsList"><div class="skeleton" style="height:300px;border-radius:16px"></div></div>
   `;
@@ -1121,6 +1121,12 @@ async function submitInterview(e) {
     await post('/interviews', body);
     toast('Interview scheduled!', 'success');
     closeModal('interviewModal');
+    document.getElementById('iAppId').value = '';
+    document.getElementById('iAppIdDisplay').value = '';
+    document.getElementById('iDate').value = '';
+    document.getElementById('iTime').value = '';
+    document.getElementById('iLink').value = '';
+    document.getElementById('iNotes').value = '';
     reloadPage('interviews');
   } catch (e) { toast(e.message, 'error'); }
 }

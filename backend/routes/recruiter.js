@@ -87,9 +87,18 @@ router.get('/applications/:id', protect, recruiterOnly, async (req, res) => {
   try {
     const application = await Application.findById(req.params.id)
       .populate('job', 'title location type salary company')
-      .populate('candidate', 'name email title skills experience education resume linkedin github bio');
+      .populate('candidate', 'name email title skills experience education linkedin github bio');
     if (!application) return res.status(404).json({ message: 'Application not found' });
-    res.json({ application });
+    
+    // Check if candidate has resume and add resume URL
+    const User = require('../models/User');
+    const candidate = await User.findById(application.candidate._id).select('resume');
+    const hasResume = !!(candidate.resume && candidate.resume.data);
+    
+    const appObj = application.toObject();
+    appObj.candidate.hasResume = hasResume;
+    
+    res.json({ application: appObj });
   } catch (e) { res.status(500).json({ message: e.message }); }
 });
 
