@@ -1033,7 +1033,7 @@ async function viewCandidateProfile(appId) {
               <div style="font-weight:600;margin-bottom:16px">${a.job?.title||'—'}</div>
               <div class="form-label">Applied</div>
               <div class="text-muted" style="font-size:13px;margin-bottom:16px">${formatDate(a.createdAt)}</div>
-              ${c.hasResume ? `<a href="${API}/candidate/resume/${c._id}" target="_blank" class="btn btn-primary btn-sm w-full" style="justify-content:center">📄 Download Resume</a>` : `<div class="text-muted">No resume uploaded</div>`}
+              ${c.hasResume ? `<a href="${API}/candidate/resume-download/${c._id}?token=${state.token}" target="_blank" class="btn btn-primary btn-sm w-full" style="justify-content:center">📄 Download Resume</a>` : `<div class="text-muted">No resume uploaded</div>`}
             </div>
           </div>
           <div class="divider"></div>

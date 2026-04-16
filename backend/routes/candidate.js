@@ -92,6 +92,26 @@ router.get('/resume/:candidateId', protect, async (req, res) => {
   } catch (e) { res.status(500).json({ message: e.message }); }
 });
 
+// Alternative endpoint with token in query (for direct link access)
+router.get('/resume-download/:candidateId', async (req, res) => {
+  try {
+    const token = req.query.token;
+    if (!token) return res.status(401).json({ message: 'Token required' });
+    
+    const jwt = require('jsonwebtoken');
+    const JWT_SECRET = process.env.JWT_SECRET || 'nexthire_super_secret';
+    const { id } = jwt.verify(token, JWT_SECRET);
+    
+    const user = await User.findById(req.params.candidateId);
+    if (!user || !user.resume || !user.resume.data) {
+      return res.status(404).json({ message: 'Resume not found' });
+    }
+    res.set('Content-Type', user.resume.contentType);
+    res.set('Content-Disposition', `attachment; filename="${user.resume.filename}"`);
+    res.send(user.resume.data);
+  } catch (e) { res.status(401).json({ message: 'Invalid token' }); }
+});
+
 // Candidate stats
 router.get('/stats', protect, async (req, res) => {
   try {
