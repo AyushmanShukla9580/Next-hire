@@ -49,10 +49,10 @@ router.put('/:id', protect, recruiterOnly, async (req, res) => {
   } catch (e) { res.status(500).json({ message: e.message }); }
 });
 
-// DELETE job
+// DELETE job (soft delete - set status to closed)
 router.delete('/:id', protect, recruiterOnly, async (req, res) => {
   try {
-    await Job.findOneAndDelete({ _id: req.params.id, postedBy: req.user._id });
+    await Job.findOneAndUpdate({ _id: req.params.id, postedBy: req.user._id }, { status: 'closed' });
     res.json({ message: 'Deleted' });
   } catch (e) { res.status(500).json({ message: e.message }); }
 });

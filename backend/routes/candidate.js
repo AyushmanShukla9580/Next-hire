@@ -138,7 +138,10 @@ router.get('/applications', protect, async (req, res) => {
 // Saved jobs
 router.get('/saved', protect, async (req, res) => {
   try {
-    const user = await User.findById(req.user._id).populate('savedJobs');
+    const user = await User.findById(req.user._id).populate({ 
+      path: 'savedJobs', 
+      match: { status: 'active' }
+    });
     res.json({ jobs: user.savedJobs || [] });
   } catch (e) { res.status(500).json({ message: e.message }); }
 });
